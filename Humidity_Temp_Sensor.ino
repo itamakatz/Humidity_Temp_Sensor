@@ -1,3 +1,17 @@
+/*
+  Common Anode 7-segment LED display
+  
+    A
+   ---
+F |   | B
+  | G |
+   ---
+E |   | C
+  |   |
+   ---
+    D
+ */
+
 #include "SparkFun_Si7021_Breakout_Library.h"
 
 #define ARRAY_LENGTH(x)  (sizeof(x) / sizeof((x)[0])) 
@@ -67,8 +81,6 @@ void setup()
   reset_pins();
 
   sensor.begin();
-
-
   
   read_sensors_timer.begin(read_sensors, 4000000);
   read_sensors_timer.priority(254);
@@ -143,34 +155,19 @@ void print_seven_segment(){
     delay(2);
 }
 
-/*
-  Showing number 0-9 on a Common Anode 7-segment LED display
-  Displays the numbers 0-9 on the display, with one second inbetween.
-    A
-   ---
-F |   | B
-  | G |
-   ---
-E |   | C
-  |   |
-   ---
-    D
-  This example code is in the public domain.
- */
-
-void seven_segment(){
+// void seven_segment(){
   
-  for(size_t i = 0; i < ARRAY_LENGTH(all_D_pins); i++) { 
-    show_digit(all_D_pins[i], 0, false, false);
-  }
-  delay(300);
-  reset_pins(); 
-  for(size_t i = 0; i < ARRAY_LENGTH(all_D_pins); i++) { 
-    show_digit(all_D_pins[i], 1, false, false);
-  }
-  delay(300);
-  reset_pins(); 
-}
+//   for(size_t i = 0; i < ARRAY_LENGTH(all_D_pins); i++) { 
+//     show_digit(all_D_pins[i], 0, false, false);
+//   }
+//   delay(300);
+//   reset_pins(); 
+//   for(size_t i = 0; i < ARRAY_LENGTH(all_D_pins); i++) { 
+//     show_digit(all_D_pins[i], 1, false, false);
+//   }
+//   delay(300);
+//   reset_pins(); 
+// }
 
 void reset_pins(){
   for(size_t i = 0; i < ARRAY_LENGTH(all_D_pins); i++) { 
