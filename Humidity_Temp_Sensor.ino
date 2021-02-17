@@ -14,12 +14,15 @@ E |   | C
 
 #include "SparkFunHTU21D.h"
 
-#define ARRAY_LENGTH(x)	(sizeof(x) / sizeof((x)[0])) 
 #define UPDATE_7SEGMENT_MS 10
 #define DISPLAY_TEMP_INTEVAL_MS 7000
 #define DISPLAY_HUMIDITY_INTEVAL_MS 3000
 #define READ_DATA_INTERVAL_MS 500 // 4000
 // #define SERIAL_ENABLE
+
+#define ARRAY_LENGTH(x)	(sizeof(x) / sizeof((x)[0])) 
+#define CELSIUS_FIGURE 10
+#define MINUS_FIGURE 11
 
 IntervalTimer read_sensors_timer;
 IntervalTimer show_digits_timer;
@@ -61,7 +64,8 @@ int multidim_num_pins[][7] = {
 	{ pinA, pinB, pinC, _NON, _NON, _NON, _NON }, // 7
 	{ pinA, pinB, pinC, pinD, pinE, pinF, pinG }, // 8
 	{ pinA, pinB, pinC, _NON, _NON, pinF, pinG }, // 9
-	{ pinA, pinB, _NON, _NON, _NON, pinF, pinG }  // celsius
+	{ pinA, pinB, _NON, _NON, _NON, pinF, pinG }, // celsius
+	{ _NON, _NON, _NON, _NON, _NON, _NON, pinG }  // minus
 };
 
 HTU21D sensor_HTU21D;
@@ -71,8 +75,9 @@ bool print_temp = true;
 void setup()
 {
 #ifdef SERIAL_ENABLE
-	Serial.begin(9600); // open serial over USB at 9600 baud
+	Serial.begin(9600);
 #endif
+
 	pinMode(LED, OUTPUT);	 
 	digitalWrite(LED, HIGH);	 
 
@@ -102,8 +107,6 @@ void loop(){ }
 void read_sensors(){
 	tempf = sensor_HTU21D.readTemperature();
 	humidity = sensor_HTU21D.readHumidity();
-	// if(print_temp) { tempf = sensor_HTU21D.readTemperature(); }
-	// else { humidity = sensor_HTU21D.readHumidity(); }
 
 #ifdef SERIAL_ENABLE
 	Serial.println("Temp:" + String(tempf) + "C, " + "Humidity:" + String(humidity) + "%");
@@ -121,7 +124,7 @@ void print_seven_segment(){
 	int temp_array [4];
 
 	int print_sensor;
-	if(print_temp) { print_sensor = (int) (tempf * 100); }
+	if(print_temp) { print_sensor = (int) (abs(tempf) * 100); }
 	else { print_sensor = (int) (humidity * 100); }
 
 	for(size_t i = 0; i < ARRAY_LENGTH(temp_array); i++)
@@ -130,15 +133,30 @@ void print_seven_segment(){
 		print_sensor /= 10;
 	}
 	
-	if(print_temp) { show_digit(all_D_pins[0], 10, true, false); } 
-	else { show_digit(all_D_pins[0], temp_array[0], true, false); }
+	// LSB ORDER
+
+	int index = 0;
+	int D_pins_index = 0;
+	if(print_temp) {
+		if(tempf >= 0) {
+			show_digit(all_D_pins[D_pins_index++], CELSIUS_FIGURE, false);  
+			index++;
+		}
+		else {
+			if(print_temp && tempf < -10) { index++; }
+			show_digit(all_D_pins[D_pins_index++], temp_array[index++], false);  // In this case FIRST increase the index, and then send the value
+		}
+	} 
+	else { show_digit(all_D_pins[D_pins_index++], temp_array[index++], false); }
 
 	delay(2);
-	show_digit(all_D_pins[1], temp_array[1], true, false);
+	show_digit(all_D_pins[D_pins_index++], temp_array[index++], print_temp && tempf < -10); // last arg is false unless temp < -10c
 	delay(2);
-	show_digit(all_D_pins[2], temp_array[2], true, true);
+	show_digit(all_D_pins[D_pins_index++], temp_array[index++], !(print_temp && tempf < -10)); // last arg is true unless temp < -10c
 	delay(2);
-	show_digit(all_D_pins[3], temp_array[3], true, false);
+	if(print_temp && tempf < 0) { show_digit(all_D_pins[D_pins_index++], MINUS_FIGURE, false);  }
+	else{ show_digit(all_D_pins[D_pins_index++], temp_array[index++], false); }
+
 	delay(2);
 }
 
@@ -148,15 +166,14 @@ void reset_pins(){
 	digitalWrite(DP, LOW);
 }
 
-void show_digit(int D_pin, int number, bool reset, bool enable_dp){
+void show_digit(int D_pin, int number, bool enable_dp){
 
-	if(reset) { reset_pins(); }
+	reset_pins();
 	
 	digitalWrite(D_pin, LOW); 
 	if(enable_dp) { digitalWrite(DP, HIGH); } 
 
 	for(size_t i = 0; i < ARRAY_LENGTH(multidim_num_pins[number]); i++) { 
-		if(multidim_num_pins[number][i] == _NON) { continue; }
-		digitalWrite(multidim_num_pins[number][i], HIGH);
+		if(multidim_num_pins[number][i] != _NON) { digitalWrite(multidim_num_pins[number][i], HIGH); }
 	}
 }
