@@ -105,6 +105,10 @@ void setup()
 void loop(){ }
 
 void read_sensors(){
+	// tempf = 1.234;
+	// tempf = 12.34;
+	// tempf = -1.234;
+	// tempf = -12.34;
 	tempf = sensor_HTU21D.readTemperature();
 	humidity = sensor_HTU21D.readHumidity();
 
@@ -121,7 +125,7 @@ void toggleDisplay(){
 
 void print_seven_segment(){
 	
-	int temp_array [4];
+	int temp_array [5] = {0};
 
 	int print_sensor;
 	if(print_temp) { print_sensor = (int) (abs(tempf) * 100); }
@@ -140,22 +144,24 @@ void print_seven_segment(){
 	if(print_temp) {
 		if(tempf >= 0) {
 			show_digit(all_D_pins[D_pins_index++], CELSIUS_FIGURE, false);  
-			index++;
+			if(tempf >= 10) { index++; }
 		}
 		else {
-			if(print_temp && tempf < -10) { index++; }
+			if(tempf <= -10) { index++; }
 			show_digit(all_D_pins[D_pins_index++], temp_array[index++], false);  // In this case FIRST increase the index, and then send the value
 		}
 	} 
-	else { show_digit(all_D_pins[D_pins_index++], temp_array[index++], false); }
+	else { 
+		show_digit(all_D_pins[D_pins_index++], temp_array[index++], false); 
+	}
 
 	delay(2);
-	show_digit(all_D_pins[D_pins_index++], temp_array[index++], print_temp && tempf < -10); // last arg is false unless temp < -10c
+	show_digit(all_D_pins[D_pins_index++], temp_array[index++], print_temp && tempf <= -10); // last arg is false unless temp < -10c
 	delay(2);
-	show_digit(all_D_pins[D_pins_index++], temp_array[index++], !(print_temp && tempf < -10)); // last arg is true unless temp < -10c
+	show_digit(all_D_pins[D_pins_index++], temp_array[index++], !(print_temp && (tempf <= -10 || (tempf <= 10 && tempf > 0)))); // last arg is true unless temp < -10c or temp > 10c
 	delay(2);
-	if(print_temp && tempf < 0) { show_digit(all_D_pins[D_pins_index++], MINUS_FIGURE, false);  }
-	else{ show_digit(all_D_pins[D_pins_index++], temp_array[index++], false); }
+	if(print_temp && tempf < 0) { show_digit(all_D_pins[D_pins_index++], MINUS_FIGURE, false); }
+	else{ show_digit(all_D_pins[D_pins_index++], temp_array[index++], print_temp && tempf < 10); } // last arg is false unless temp < 10c
 
 	delay(2);
 }
