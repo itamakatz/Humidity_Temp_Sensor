@@ -12,7 +12,7 @@ E |   | C
     D
  */
 
-#include "SparkFun_Si7021_Breakout_Library.h"
+#include "SparkFunHTU21D.h"
 
 #define ARRAY_LENGTH(x)	(sizeof(x) / sizeof((x)[0])) 
 #define UPDATE_7SEGMENT_MS 10
@@ -64,7 +64,7 @@ int multidim_num_pins[][7] = {
 	{ pinA, pinB, _NON, _NON, _NON, pinF, pinG }  // celsius
 };
 
-Weather sensor;
+HTU21D sensor_HTU21D;
 
 bool print_temp = true;
 //---------------------------------------------------------------
@@ -83,7 +83,7 @@ void setup()
 	
 	reset_pins();
 
-	sensor.begin();
+	sensor_HTU21D.begin();
 
 	read_sensors_timer.begin(read_sensors, READ_DATA_INTERVAL_MS * 1000);
 	read_sensors_timer.priority(254);
@@ -94,17 +94,16 @@ void setup()
 	show_digits_timer.begin(print_seven_segment, UPDATE_7SEGMENT_MS * 1000);
 	show_digits_timer.priority(200);
 
-	humidity = sensor.getRH();
-	tempf = sensor.readTempC();
+	read_sensors();
 }
 
 void loop(){ }
 
 void read_sensors(){
-	// tempf = sensor.getTempC(); 
-	// humidity = sensor.getRH();
-	if(print_temp) { tempf = sensor.getTempC(); }
-	else { humidity = sensor.getRH(); }
+	tempf = sensor_HTU21D.readTemperature();
+	humidity = sensor_HTU21D.readHumidity();
+	// if(print_temp) { tempf = sensor_HTU21D.readTemperature(); }
+	// else { humidity = sensor_HTU21D.readHumidity(); }
 
 #ifdef SERIAL_ENABLE
 	Serial.println("Temp:" + String(tempf) + "C, " + "Humidity:" + String(humidity) + "%");
